@@ -114,7 +114,7 @@ namespace HanobiGame
 
                     ++cardsOnTable;
                     if (cardsOnTable == cardsMaxNumber)
-                        return false;
+                        correctAction = false;
                 }
 
                 return correctAction;
@@ -122,6 +122,9 @@ namespace HanobiGame
 
             public bool makeAction(String action)
             {
+                if (players == null)
+                    return true;
+
                 ++turn;
                 List<String> command = action.Split(' ').ToList();
                 bool continueGame = true;
@@ -149,11 +152,35 @@ namespace HanobiGame
             {
                 return String.Format("Turn: {0}, cards: {1}, with risk: {2}", turn, cardsOnTable, risk);
             }
+
+            public void stopGame()
+            {
+                players.Clear();
+            }
         }
 
         static void Main(string[] args)
         {
+            string command;
+            HanobiCardGame game = null;
+            while (true)
+            {
+                command = Console.ReadLine();
+                if (command == null)
+                    break;
 
+                if (command.Substring(0, 5) == "Start")
+                    game = new HanobiCardGame(command
+                                                .Split(' ')
+                                                .Skip(5)
+                                                .ToList());
+                else
+                    if (!game.makeAction(command))
+                {
+                    Console.WriteLine(game.getStatistic());
+                    game.stopGame();
+                }
+            }
         }
     }
 }
