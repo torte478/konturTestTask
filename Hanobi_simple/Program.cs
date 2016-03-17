@@ -14,8 +14,7 @@ namespace HanobiGame
         class Card
         {
             public int[] value;
-            public bool checkColor;
-            public bool checkRank;
+            public bool[] checkValue;
 
             public Card(String str)
             {
@@ -26,8 +25,9 @@ namespace HanobiGame
                 value[(int)Attribute.color] = color;
                 value[(int)Attribute.rank] = rank;
 
-                checkColor = false;
-                checkRank = false;
+                checkValue = new bool[2];
+                checkValue[(int)Attribute.color] = false;
+                checkValue[(int)Attribute.rank] = false;
             }
         }
 
@@ -41,7 +41,7 @@ namespace HanobiGame
             List<String> cardDeck;
             int currentPlayer, currentCard;
 
-            int turn, cards, risk;
+            int turn, cardsOnTable, risk;
             
             public HanobiCardGame(List<String> cardDeck)
             {
@@ -60,22 +60,21 @@ namespace HanobiGame
                 currentPlayer = 0;
                 currentCard = cardsOnOneHands * 2;
                 turn = 0;
-                cards = 0;
+                cardsOnTable = 0;
                 risk = 0;
             }
 
             private bool tellAttribute(List<String> command)
             {
-                Attribute attribute;
-                int value;
+                int value, attribute;
                 if (command[1] == "color")
                 {
-                    attribute = Attribute.color;
+                    attribute = (int)Attribute.color;
                     value = Colors.IndexOf(command[2][0]);
                 }
                 else
                 {
-                    attribute = Attribute.rank;
+                    attribute = (int)Attribute.rank;
                     value = Convert.ToInt32(command[2]);
                 }
 
@@ -89,30 +88,66 @@ namespace HanobiGame
                 {
                     Card card = players[playerIndex][cardIndex];
 
-                    if (card.value[(int)attribute] != value)
+                    if (card.value[attribute] != value)
                         return false;
 
-                    if (attribute == Attribute.color)
-                        card.checkColor = true;
-                    else
-                        card.checkRank = true;
+                    card.checkValue[attribute] = true;
                 }
 
-                //TODO
+                bool allChecked = players[playerIndex]
+                                    .Where(card => !card.checkValue[attribute])
+                                    .Count() == 0;
+                return allChecked;
+            }
 
-                return true;
+            private bool playCard(Card card)
+            {
+                int cardColor = card.value[(int)Attribute.color];
+                int cardRank = card.value[(int)Attribute.rank];
+
+                bool correctAction = table[cardColor] == cardRank - 1;
+                if (correctAction)
+                {
+                    ++table[cardColor];
+                    if (card.checkValue[0] && card.checkValue[1] == false)
+                        ++risk;
+
+                    ++cardsOnTable;
+                    if (cardsOnTable == cardsMaxNumber)
+                        return false;
+                }
+
+                return correctAction;
             }
 
             public bool makeAction(String action)
             {
                 ++turn;
+                List<String> command = action.Split(' ').ToList();
+                bool continueGame = true;
+                if (command[0] == "Tell")
+                    continueGame = tellAttribute(command);
+                else
+                {
+                    int cardIndex = Convert.ToInt32(command[2]);
+                    Card card = players[currentPlayer][cardIndex];
 
-                return true;
+                    if (command[0] == "Play")
+                        continueGame = playCard(card);
+
+                    for (int i = cardIndex; i < cardsOnOneHands - 1; ++i)
+                        players[currentPlayer][i] = players[currentPlayer][i + 1];
+                    players[currentPlayer][cardsOnOneHands - 1] = new Card(cardDeck[currentCard++]);
+
+                    continueGame = continueGame && (currentCard != cardDeck.Count());
+                }
+
+                return continueGame;
             }
 
             public string getStatistic()
             {
-                return String.Format("Turn: {0}, cards: {1}, with risk: {2}", turn, cards, risk);
+                return String.Format("Turn: {0}, cards: {1}, with risk: {2}", turn, cardsOnTable, risk);
             }
         }
 
