@@ -16,6 +16,8 @@ namespace HanobiGame
             public int[] value;
             public List<List<bool>> checkValue;
 
+            public bool[] knownValue;
+
             public Card(String str)
             {
                 int color = Colors.IndexOf(str[0]);
@@ -31,22 +33,26 @@ namespace HanobiGame
                                                         .Select(j => false)
                                                         .ToList())
                                 .ToList();
+
+                knownValue = Enumerable
+                                .Range(0, 2)
+                                .Select(x => false)
+                                .ToArray();
             }
 
-            public bool IsKnownCard()
+            public void CallAttribute(int attribute)
             {
-                bool isKnownCard = checkValue[0][value[0]] && checkValue[1][value[1]];
-                if (!isKnownCard)
-                {
-                    bool[] checkedAttrCount = Enumerable
-                                                .Range(0, 2)
-                                                .Select(attr => checkValue[attr]
-                                                                 .Where(v => v == false)
-                                                                 .Count() == 1)
-                                                .ToArray();
-                    isKnownCard = checkedAttrCount[0] && checkedAttrCount[1];
-                }
-                return isKnownCard;
+                checkValue[attribute][value[attribute]] = true;
+                knownValue[attribute] = true;
+            }
+
+            public void CheckAttribute(int attribute, int value)
+            {
+                checkValue[attribute][value] = true;
+                if (!knownValue[attribute] && checkValue[attribute]
+                    .Where(v => v == true)
+                    .Count() == cardsOnOneHands - 1)
+                    knownValue[attribute] = true;
             }
         }
 
@@ -118,10 +124,26 @@ namespace HanobiGame
                     if ((card.value[attribute] == value) == !cardIndices.Contains(i))
                         return false;
 
-                    card.checkValue[attribute][value] = true;
+                    if (cardIndices.Contains(i))
+                        card.CallAttribute(attribute);
+                    else
+                        card.CheckAttribute(attribute, value);
                 }
 
                 return true;
+            }
+            
+            private bool IsRiskyCard(Card card)
+            {
+                bool isRiskyCard = card.knownValue[(int)Attribute.color] == false;
+                if (!isRiskyCard && card.knownValue[(int)Attribute.rank] == false)
+                {
+                    int rank = card.value[(int)Attribute.rank];
+                    for (int i = 0; i < table.Count; ++i)
+                        isRiskyCard = isRiskyCard || card.checkValue[(int)Attribute.color][i]
+                }
+
+                return isRiskyCard;
             }
 
             private bool PlayCard(Card card)
@@ -134,7 +156,7 @@ namespace HanobiGame
                 {
                     ++table[cardColor];
 
-                    if (!card.IsKnownCard())
+                    if (IsRiskyCard(card))
                         ++risk;
 
                     ++cardsOnTable;
