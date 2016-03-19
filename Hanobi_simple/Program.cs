@@ -135,12 +135,13 @@ namespace HanobiGame
             
             private bool IsRiskyCard(Card card)
             {
-                bool isRiskyCard = card.knownValue[(int)Attribute.color] == false;
-                if (!isRiskyCard && card.knownValue[(int)Attribute.rank] == false)
+                bool isRiskyCard = card.knownValue[(int)Attribute.rank] == false;
+                if (!isRiskyCard && card.knownValue[(int)Attribute.color] == false)
                 {
-                    int rank = card.value[(int)Attribute.rank];
+                    int cardRank = card.value[(int)Attribute.rank];
                     for (int i = 0; i < table.Count; ++i)
-                        isRiskyCard = isRiskyCard || card.checkValue[(int)Attribute.color][i]
+                        if (table[i] != cardRank && card.checkValue[(int)Attribute.color][i] == false)
+                            isRiskyCard = true;
                 }
 
                 return isRiskyCard;
@@ -154,12 +155,12 @@ namespace HanobiGame
                 bool continueGame = table[cardColor] == cardRank;
                 if (continueGame)
                 {
-                    ++table[cardColor];
-
                     if (IsRiskyCard(card))
                         ++risk;
 
+                    ++table[cardColor];
                     ++cardsOnTable;
+
                     if (cardsOnTable == cardsMaxNumber)
                         continueGame = false;
                 }
@@ -194,6 +195,8 @@ namespace HanobiGame
                 }
 
                 currentPlayer = (currentPlayer + 1) % 2;
+                if (continueGame == false)
+                    isStopped = true;
 
                 return continueGame;
             }
@@ -202,22 +205,15 @@ namespace HanobiGame
             {
                 return String.Format("Turn: {0}, cards: {1}, with risk: {2}", turn, cardsOnTable, risk);
             }
-
-            public void StopGame()
-            {
-                isStopped = true;
-            }
         }
 
         static void Main(string[] args)
-        {
+            {
             string command;
             HanobiCardGame game = null;
-            string[] text = System.IO.File.ReadAllLines("1-1.in");
-            int i = 0;
             while (true)
             {
-                command = text[i++];// Console.ReadLine();
+                command = Console.ReadLine();
                 if (command == null)
                     break;
 
@@ -228,13 +224,7 @@ namespace HanobiGame
                                                 .ToList());
                 else
                     if (!game.MakeAction(command))
-                {
-                    Console.WriteLine(game.GetStatistic());
-                    game.StopGame();
-                }
-
-                if (i == text.Length)
-                    break;
+                        Console.WriteLine(game.GetStatistic());
             }
         }
     }
