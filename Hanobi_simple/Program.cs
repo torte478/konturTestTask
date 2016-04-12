@@ -1,40 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace HanobiGame
+
+namespace HanabiGame
 {
-    class Program
+    internal class Program
     {
-        enum Attribute { color, rank };
-        const String Colors = "RGBYW";
+        private enum Attribute { Color, Rank };
+        private const string Colors = "RGBYW";
 
-        class Card
+        private class Card
         {
-            public int[] value;
-            public List<List<bool>> checkValue;
+            public readonly int[] Value;
+            public List<List<bool>> isCheckedValue;
 
-            public bool[] knownValue;
+            public bool[] isKnownValue;
 
-            public Card(String str)
+            public Card(string str)
             {
-                int color = Colors.IndexOf(str[0]);
-                int rank = Convert.ToInt32(str.Substring(1));
+                var color = Colors.IndexOf(str[0]);
+                var rank = Convert.ToInt32(str.Substring(1));
 
-                value = new int[2];
-                value[(int)Attribute.color] = color;
-                value[(int)Attribute.rank] = rank - 1;
+                Value = new int[2];
+                Value[(int)Attribute.Color] = color;
+                Value[(int)Attribute.Rank] = rank - 1;
 
-                checkValue = Enumerable
+                isCheckedValue = Enumerable
                                 .Range(0, 2)
                                 .Select(i => Enumerable.Range(0, 5)
                                                         .Select(j => false)
                                                         .ToList())
                                 .ToList();
 
-                knownValue = Enumerable
+                isKnownValue = Enumerable
                                 .Range(0, 2)
                                 .Select(x => false)
                                 .ToArray();
@@ -42,86 +41,87 @@ namespace HanobiGame
 
             public void CallAttribute(int attribute)
             {
-                checkValue[attribute][value[attribute]] = true;
-                knownValue[attribute] = true;
+                isCheckedValue[attribute][Value[attribute]] = true;
+                isKnownValue[attribute] = true;
             }
 
             public void CheckAttribute(int attribute, int value)
             {
-                checkValue[attribute][value] = true;
-                if (!knownValue[attribute] && checkValue[attribute]
-                    .Where(v => v == true)
-                    .Count() == cardsOnOneHands - 1)
-                    knownValue[attribute] = true;
+                isCheckedValue[attribute][value] = true;
+                if (!isKnownValue[attribute] && isCheckedValue[attribute]
+                                                    .Count(v => v) ==CardsOnOneHands - 1)
+                    isKnownValue[attribute] = true;
             }
         }
 
-        const int cardsOnOneHands = 5;
-        const int cardsMaxNumber = 25;
+        private const int CardsOnOneHands = 5;
+        private const int CardsMaxNumber = 25;
 
-        class HanobiCardGame
+        private class HanabiCardGame
         {
-            List<List<Card>> players;
-            List<int> table;
-            List<String> cardDeck;
-            int currentPlayer, currentCard;
+            private readonly List<List<Card>> _players;
+            private readonly List<int> _table;
+            private readonly List<string> _cardDeck;
+            private int _currentPlayer, _currentCard;
 
-            int turn, cardsOnTable, risk;
+            private int _turn, _cardsOnTable, _risk;
 
-            bool isStopped;
+            private bool _isStopped;
                       
-            public HanobiCardGame(List<String> cardDeck)
+            public HanabiCardGame(List<string> cardDeck)
             {
-                this.cardDeck = cardDeck;
-                players = new List<List<Card>>(2);
-                players.Add(cardDeck
-                            .Take(cardsOnOneHands)
-                            .Select(str => new Card(str))
-                            .ToList());
-                players.Add(cardDeck
-                            .Skip(cardsOnOneHands)
-                            .Take(cardsOnOneHands)
-                            .Select(str => new Card(str))
-                            .ToList());
+                _cardDeck = cardDeck;
+                _players = new List<List<Card>>(2)
+                {
+                    _cardDeck
+                        .Take(CardsOnOneHands)
+                        .Select(str => new Card(str))
+                        .ToList(),
+                    _cardDeck
+                        .Skip(CardsOnOneHands)
+                        .Take(CardsOnOneHands)
+                        .Select(str => new Card(str))
+                        .ToList()
+                };
 
-                table = Enumerable
+                _table = Enumerable
                             .Range(0, 5)
                             .Select(x => 0)
                             .ToList();
-                currentPlayer = 0;
-                currentCard = cardsOnOneHands * 2;
-                turn = 0;
-                cardsOnTable = 0;
-                risk = 0;
+                _currentPlayer = 0;
+                _currentCard = CardsOnOneHands * 2;
+                _turn = 0;
+                _cardsOnTable = 0;
+                _risk = 0;
 
-                isStopped = false;
+                _isStopped = false;
             }
 
-            private bool TellAttribute(List<String> command)
+            private bool TellAttribute(IReadOnlyList<string> command)
             {
                 int value, attribute;
                 if (command[1] == "color")
                 {
-                    attribute = (int)Attribute.color;
+                    attribute = (int)Attribute.Color;
                     value = Colors.IndexOf(command[2][0]);
                 }
                 else
                 {
-                    attribute = (int)Attribute.rank;
+                    attribute = (int)Attribute.Rank;
                     value = Convert.ToInt32(command[2]) - 1;
                 }
 
-                List<int> cardIndices = command
+                var cardIndices = command
                                     .Skip(5)
                                     .Select(str => Convert.ToInt32(str))
                                     .ToList();
-                int playerIndex = (currentPlayer + 1) % 2;
+                var playerIndex = (_currentPlayer + 1) % 2;
 
-                for (int i = 0; i < players[playerIndex].Count; ++i)
+                for (var i = 0; i < _players[playerIndex].Count; ++i)
                 {
-                    Card card = players[playerIndex][i];
+                    var card = _players[playerIndex][i];
 
-                    if ((card.value[attribute] == value) == !cardIndices.Contains(i))
+                    if ((card.Value[attribute] == value) == !cardIndices.Contains(i))
                         return false;
 
                     if (cardIndices.Contains(i))
@@ -135,96 +135,96 @@ namespace HanobiGame
             
             private bool IsRiskyCard(Card card)
             {
-                bool isRiskyCard = card.knownValue[(int)Attribute.rank] == false;
-                if (!isRiskyCard && card.knownValue[(int)Attribute.color] == false)
-                {
-                    int cardRank = card.value[(int)Attribute.rank];
-                    for (int i = 0; i < table.Count; ++i)
-                        if (table[i] != cardRank && card.checkValue[(int)Attribute.color][i] == false)
-                            isRiskyCard = true;
-                }
+                var isRiskyCard = card.isKnownValue[(int)Attribute.Rank] == false;
+                if (isRiskyCard || card.isKnownValue[(int) Attribute.Color])
+                    return isRiskyCard;
+
+                var cardRank = card.Value[(int)Attribute.Rank];
+                for (var i = 0; i < _table.Count; ++i)
+                    if (_table[i] != cardRank && card.isCheckedValue[(int)Attribute.Color][i] == false)
+                        isRiskyCard = true;
 
                 return isRiskyCard;
             }
 
             private bool PlayCard(Card card)
             {
-                int cardColor = card.value[(int)Attribute.color];
-                int cardRank = card.value[(int)Attribute.rank];
+                var cardColor = card.Value[(int)Attribute.Color];
+                var cardRank = card.Value[(int)Attribute.Rank];
 
-                bool continueGame = table[cardColor] == cardRank;
-                if (continueGame)
-                {
-                    if (IsRiskyCard(card))
-                        ++risk;
+                var continueGame = _table[cardColor] == cardRank;
 
-                    ++table[cardColor];
-                    ++cardsOnTable;
+                if (!continueGame)
+                    return false;
 
-                    if (cardsOnTable == cardsMaxNumber)
-                        continueGame = false;
-                }
+                if (IsRiskyCard(card))
+                    ++_risk;
+
+                ++_table[cardColor];
+                ++_cardsOnTable;
+
+                if (_cardsOnTable == CardsMaxNumber)
+                    continueGame = false;
 
                 return continueGame;
             }
 
-            public bool MakeAction(String command)
+            public bool MakeAction(string command)
             {
-                if (isStopped)
+                if (_isStopped)
                     return true;
 
-                ++turn;
-                List<String> commandList = command.Split(' ').ToList();
-                bool continueGame = true;
+                ++_turn;
+                var commandList = command.Split(' ').ToList();
+                var continueGame = true;
 
                 if (commandList[0] == "Tell")
                     continueGame = TellAttribute(commandList);
                 else
                 {
-                    int cardIndex = Convert.ToInt32(commandList[2]);
-                    Card card = players[currentPlayer][cardIndex];
+                    var cardIndex = Convert.ToInt32(commandList[2]);
+                    var card = _players[_currentPlayer][cardIndex];
 
                     if (commandList[0] == "Play")
                         continueGame = PlayCard(card);
 
-                    for (int i = cardIndex; i < cardsOnOneHands - 1; ++i)
-                        players[currentPlayer][i] = players[currentPlayer][i + 1];
-                    players[currentPlayer][cardsOnOneHands - 1] = new Card(cardDeck[currentCard++]);
+                    for (var i = cardIndex; i < CardsOnOneHands - 1; ++i)
+                        _players[_currentPlayer][i] = _players[_currentPlayer][i + 1];
+                    _players[_currentPlayer][CardsOnOneHands - 1] = new Card(_cardDeck[_currentCard++]);
 
-                    continueGame = continueGame && (currentCard != cardDeck.Count());
+                    continueGame = continueGame && (_currentCard != _cardDeck.Count());
                 }
 
-                currentPlayer = (currentPlayer + 1) % 2;
+                _currentPlayer = (_currentPlayer + 1) % 2;
                 if (continueGame == false)
-                    isStopped = true;
+                    _isStopped = true;
 
                 return continueGame;
             }
 
             public string GetStatistic()
             {
-                return String.Format("Turn: {0}, cards: {1}, with risk: {2}", turn, cardsOnTable, risk);
+                return $"Turn: {_turn}, cards: {_cardsOnTable}, with risk: {_risk}";
             }
         }
 
-        static void Main(string[] args)
+        private static void Main()
             {
-            string command;
-            HanobiCardGame game = null;
+            HanabiCardGame game = null;
             while (true)
             {
-                command = Console.ReadLine();
+                var command = Console.ReadLine();
                 if (command == null)
                     break;
 
                 if (command.Substring(0, 5) == "Start")
-                    game = new HanobiCardGame(command
+                    game = new HanabiCardGame(command
                         .Split(' ')
                         .Skip(5)
                         .ToList());
                 else
                 {
-                    bool isFinalCommand = !game.MakeAction(command);
+                    var isFinalCommand = (game != null) && !game.MakeAction(command);
                     if (isFinalCommand)
                         Console.WriteLine(game.GetStatistic());
                 }
