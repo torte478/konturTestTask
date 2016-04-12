@@ -219,12 +219,15 @@ namespace HanobiGame
 
                 if (command.Substring(0, 5) == "Start")
                     game = new HanobiCardGame(command
-                                                .Split(' ')
-                                                .Skip(5)
-                                                .ToList());
+                        .Split(' ')
+                        .Skip(5)
+                        .ToList());
                 else
-                    if (!game.MakeAction(command))
+                {
+                    bool isFinalCommand = !game.MakeAction(command);
+                    if (isFinalCommand)
                         Console.WriteLine(game.GetStatistic());
+                }
             }
         }
     }
